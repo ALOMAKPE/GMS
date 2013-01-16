@@ -1,0 +1,151 @@
+<?php session_start(); if(!isset($_SESSION["id"])) echo "<script language=JavaScript> eval(document.location.href='index.php') </script>"; $login=$_SESSION["id"]; ?>
+<html>
+<head>
+
+<title>prof_notes</title>	
+<?php include("connect.php"); ?>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head><body>
+
+<?php
+$classe=mysql_query("select * from CLASSE where CLASSE.id_pp='$login'");
+$ligne=mysql_fetch_array($classe);
+$nb=mysql_num_rows($classe);
+?>
+<h1>Afficher le bulletin de la classe </h1>
+<form method="post" action="affich_bulletin.php">
+
+	Voir la classe : <select name='classe'>
+	<?php 
+        $classe=mysql_query("select * from CLASSE where CLASSE.id_pp='$login' group by id_classe");
+		while($ligne=mysql_fetch_array($classe)){?>
+	  <option value="<?php print($ligne[0]); ?>" ><?php print($ligne[1]);
+	}
+	?>
+	</select><br>
+	<br>
+	<input type='submit' value='0k'>
+</form>
+<?php
+if(isset($_POST["classe"])){
+	$classe=$_POST["classe"];
+	if(isset($_POST["eleve"])) { $id_eleve=$_POST["eleve"];$all_classe=mysql_query("select * from ELEVE where id_eleve='$id_eleve'");
+	}else $all_classe=mysql_query("select * from ELEVE where id_classe='$classe'");
+	$k=1;
+	$ligne_classe=mysql_fetch_array($all_classe);
+	print("<table style=' border : 2px solid #fff; ' width='400'><td colspan=2 style=' border-bottom : 1px solid #fff; '; bgcolor='lightgreen'><center><h1>".$ligne_classe[1]."</h1><h4>".$ligne_classe[2]."</h4></center></td></tr>");
+	print("<tr bgcolor='#CFCFCF'><td><b>Matiere</b></td><td><center><b> Note </b></center></td></tr>");
+	//while($ligne_classe=mysql_fetch_array($all_classe)){
+		$all_matiere=mysql_query("select * from MATIERE,ENSEIGNE where ENSEIGNE.id_classe='$classe' and ENSEIGNE.id_matiere=MATIERE.id_matiere GROUP BY MATIERE.nom_matiere");
+		$total=0;$nb_mat=0;$moyFin=0;
+		while($ligne_matiere=mysql_fetch_array($all_matiere)){
+			$coef=0;$moy=0;$total=0;$moyTot=0;
+			$inter=mysql_query("select * from CONTROLE where id_matiere='$ligne_matiere[0]'");
+			while($ligne_inter=@mysql_fetch_array($inter)){
+				$note_eleve=mysql_query("select * from NOTE,ELEVE,CONTROLE,OBTIENT where CONTROLE.id_matiere='$ligne_matiere[0]' and OBTIENT.id_eleve='$ligne_classe[0]' and CONTROLE.id_controle='$ligne_inter[0]' and NOTE.id_note=OBTIENT.id_note and CONTROLE.id_controle=NOTE.id_controle");
+				$note_eleve=mysql_fetch_array($note_eleve);
+				if(!is_null($note_eleve[1])){$coef+=$ligne_inter[2];$moy+=$note_eleve[1]*$ligne_inter[2];}else{ ;$coef=''; }
+			}
+			if($coef!=''){ print("Coef = ".$coef);$moy/=$coef;$total+=$moy;$nb_mat++;}
+			$moyTot=$total;
+			if($moyTot<9) $color="red"; else $color="blue";
+			if($k%2) $bgcolor=""; else $bgcolor='lightskyblue';
+
+			if($coef=='null'){ 
+				$aff[0]='';
+				print("<tr bgcolor='".$bgcolor."'><td>".$ligne_matiere[1]."</td><td><font><b><center>AUCUNE NOTE</center></b></td></tr>");
+			}else{ 
+				ereg("([0-9]{1,2})([.]{0,1})([0-9]{0,2})",$moyTot,$aff); 
+				print("<tr bgcolor='".$bgcolor."'><td>".$ligne_matiere[1]."</td><td><font color='$color'><b><center>".$aff[0]."</center></b></td></tr>");
+			}
+			$moyFin+=$aff[0];
+			$k++;
+		}
+		$total=0;
+		$total=$moyFin/=$nb_mat;
+		print("<tr bgcolor='lightsteelblue'><td>MOYENNE GENERALE</td><td><font color='$color'><b><center>".$total."</center></b></td></tr>");
+
+	/*
+	affiche les flesches suivants et / ou precedents 
+	*/
+	print("</table><table  style=' background-color : transparent; border-color : #B0C4DE; '><font size='10px'><tr>");
+	$all_class_prec=mysql_query("select * from ELEVE where id_eleve='$ligne_classe[0]'-1");
+	$ligne_classe_prec=mysql_fetch_array($all_class_prec);
+	print("<td style= 'border-color : #B0C4DE' >");
+	if($ligne_classe[3]==$ligne_classe_prec[3]){
+			$eleve_precedent=$ligne_classe_prec[0];
+			print("Eleve précédent<br>");
+			?>
+			<form method="post" action="affich_bulletin.php">
+				<input value='<?php print("$classe"); ?>' name='classe' type='hidden'>
+				<input value='<?php print("$eleve_precedent"); ?>' name="eleve" type="hidden">
+				<input type="submit" value="<">
+			</form>
+			<?php
+			print("</td>");
+	}else print("</td>");
+	$all_class_suiv=mysql_query("select * from ELEVE where id_eleve='$ligne_classe[0]'+1");
+	$ligne_classe_suiv=mysql_fetch_array($all_class_suiv);
+	print("<td style= 'border-color : #B0C4DE' >");
+	if($ligne_classe[3]==$ligne_classe_suiv[3]){
+		 $eleve_suivant=$ligne_classe_suiv[0];
+		 print("Eleve suivant<br>");
+		 ?>
+		<form method="post" action="affich_bulletin.php">
+			  <input value='<?php print("$classe"); ?>' name='classe' type='hidden'>
+			  <input value='<?php print("$eleve_suivant"); ?>' name="eleve" type="hidden">
+			<div align='right'><input type="submit" value=">">
+		</form>
+		<?php
+		print("</td>");
+	}else print("</td>");	
+
+	print("</tr></font></table>");
+}
+ /* fin fleche */
+//}
+/*	
+	
+	
+	
+	
+	$all_matiere=mysql_query("select * from MATIERE,ENSEIGNE where ENSEIGNE.id_classe='$classe' and MATIERE.id_matiere=ENSEIGNE.id_matiere GROUP BY MATIERE.nom_matiere");
+	
+	$all_classe=mysql_query("select * from ELEVE where id_classe='$classe'");
+	print("<h1>Moyennes de la classe ".$classe."</h1>");
+	
+	print("<table><tr><th><tr><th>Matiere</th><th></th>");
+	while($ligne_matiere=mysql_fetch_array($all_matiere)){
+		print("<th>".$ligne_matiere[1]."</th>");
+	}
+	
+	print("<th>MOYENNE</th></tr><br>");
+	$k=1;
+	while($ligne_classe=mysql_fetch_array($all_classe)){
+		print("<tr bgcolor='".$bgcolor."'  style=' font-size : 8px ; '><td><b>".$ligne_classe[1]."</b></td><td>".$ligne_classe[2]."</td>");
+		$all_matiere=mysql_query("select * from MATIERE,ENSEIGNE where ENSEIGNE.id_classe='$classe' and ENSEIGNE.id_matiere=MATIERE.id_matiere GROUP BY MATIERE.nom_matiere");
+		$total=0;$nb_mat=0;
+		while($ligne_matiere=mysql_fetch_array($all_matiere)){
+			$i=0;$moy=0;
+			$inter=mysql_query("select * from CONTROLE where id_matiere='$ligne_matiere[0]'");
+			while($ligne_inter=mysql_fetch_array($inter)){
+				$note_eleve=mysql_query("select * from NOTE,ELEVE,CONTROLE,OBTIENT where CONTROLE.id_matiere='$ligne_matiere[0]' and OBTIENT.id_eleve='$ligne_classe[0]' and CONTROLE.id_controle='$ligne_inter[0]' and NOTE.id_note=OBTIENT.id_note and CONTROLE.id_controle=NOTE.id_controle");
+				$note_eleve=mysql_fetch_array($note_eleve);
+				//if(is_null($note_eleve[1])){ print("<td bgcolor='white'>ABSENT</td>"); }else{ print("<td bgcolor='white'><center><b>".$note_eleve[1]."</b></center></td>"); }
+				if(!is_null($note_eleve[1])){ $i++;$moy+=$note_eleve[1]*$ligne_inter[2]; }
+			}
+			if($i!=0){ print("<td><center><tt><b>".$moy/=$i."</center></tt></td>");$total+=$moy;$nb_mat++; }else print("<td><center><tt><b>AUCUNE NOTE</center></tt></td>");
+			
+		}
+		if($nb_mat!=0) $moyTot=$total/=$nb_mat;
+		if($moyTot<9) $color="red"; else $color="blue";
+		ereg("([0-9]{1,2})([.]{0,1})([0-9]{0,1})",$moyTot,$aff); 
+		//if($aff[0]<'9') $bgcolor="white"; else $bgcolor="";
+		print("<td><font color='$color'><b><center>".$aff[0]."</center></b></td></tr>");
+		$k++;
+	}
+	print("</table>");
+}*/
+?>
+</body>
+</html>

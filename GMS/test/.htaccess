@@ -1,0 +1,9 @@
+AuthName message
+AuthUserFile /var/www/profnote/basedenoms/.htpasswd
+AuthGroupFile /dev/null
+AuthType Basic
+
+<limit GET POST>
+require valid-user
+</Limit>
+

@@ -1,0 +1,63 @@
+<html>
+<body>
+<?php
+$annee=$_GET['annee'];
+$anneeprec=$annee-1;
+if(!$connect=mysql_connect("localhost","root","")) mysql_error();
+if(!$db=mysql_select_db("isja_profnotes".$anneeprec,$connect)) {
+	print("ERREUR CONNECTION BASE DE DONNEES! <br>");
+	exit(2);
+}else{
+	mysql_close($connect);
+	?>
+	Ins&eacute;rez les professeurs principaux de chaque classe.<br />
+	<div id='insertion_pp'>
+	<form name="insertionClasse">
+	<?php
+	if(isset($_GET['id_classe'])) $id_classe=$_GET['id_classe']; else $id_classe=1;
+	if(!$connect=mysql_connect("localhost","root","")) mysql_error();
+	$db=mysql_select_db("isja_profnotes".$annee,$connect);
+	$select_classe=mysql_query("SELECT * from CLASSE");
+	$j=1;
+	print("<table align='left' width='30%'><th>Classe</th><th>Nom</th><th>Prenom</th>");
+	while($liste_classe=mysql_fetch_array($select_classe)){
+		$id_prof=mysql_query("select * from PROFESSEUR where id_professeur='$liste_classe[2]'");
+		$idprof=mysql_fetch_array($id_prof);
+		?>
+		<tr bgcolor="#CC7777">
+		<td><?php print($liste_classe[1]); ?></td>
+		<td><?php print($idprof[1]); ?></td>
+		<td><?php print($idprof[2]); ?></td>
+		<?php $j++; ?>
+	</tr>
+	<?php
+	}
+	mysql_close($connect);
+	if(!$connect=mysql_connect("localhost","root","")) mysql_error();
+	$db=mysql_select_db("isja_profnotes".$anneeprec,$connect);
+	$select_classe=mysql_query("SELECT * from CLASSE where id_classe='$id_classe'");
+	$liste_classe=mysql_fetch_array($select_classe);
+	?>
+	<tr id="bulletin"><td><?php print($liste_classe[1]);
+	?></td>
+	<td><input type='hidden' value='' name="idpp"><div id="nom"></div></td>
+	<td><div id="prenom"></div></td>
+	<td name='bouton' style='visibility : hidden;'><input type='button' value='Inserez' onclick="insert_prof();"></td>
+	</tr>
+	</table>
+	<input type='hidden' value='<?php print($liste_classe[1]); ?>' name="nom_classe" >
+	<input type='hidden' value='<?php print($annee); ?>' name="annee" >
+	</form>
+	</div>
+	<b>Recherche de professeurs :</b>
+	<form name="rechercheProfesseur">
+	<input type="text" name="rechercheNom" value="" id="cherche" size="20" style="margin-left: 10px;" tabindex="1" onKeyUp="ahah('chercheProfesseur.php?idc=<?php print($id_classe); ?>&nom='+this.value+'&annee=<?php print($annee); ?>','chercheDiv');">
+	</form>
+	<div id='chercheDiv'>&nbsp;</div>
+	<div id='insertion_pp_ok'></div>
+	
+<?php
+}
+?>
+</body>
+</html>
