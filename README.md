@@ -1,4 +1,4 @@
 GMS
 ===
 
-Grade MAnagement Software : Outils de gestio nde notes et de bulletons sou PHP/MySQL
+Grade MAnagement Software : Outils de gestion de notes et de bulletins sous PHP/MySQL
